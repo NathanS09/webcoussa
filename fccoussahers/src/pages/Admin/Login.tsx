@@ -58,7 +58,6 @@ const Login: React.FC = () => {
     }
   };
 
-  // 2. GESTION DU CHANGEMENT DE MOT DE PASSE
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword.length < 8) return toast.error("Le mot de passe doit faire au moins 8 caractères");
@@ -69,6 +68,7 @@ const Login: React.FC = () => {
       const user = getCurrentUser();
       if (!user) throw new Error("Utilisateur non trouvé");
 
+      // 1. On met à jour le mot de passe (L'ancien token meurt ici)
       await updateRecord('users', user.id, {
         oldPassword: password,
         password: newPassword,
@@ -76,7 +76,13 @@ const Login: React.FC = () => {
         first_connection: false
       });
 
+      // 2. CRUCIAL : On se reconnecte immédiatement avec le NOUVEAU mot de passe
+      // Cela permet de récupérer un nouveau token valide sans déconnecter l'utilisateur
+      await login(user.email, newPassword);
+
       toast.success("Mot de passe mis à jour !");
+      
+      // 3. Maintenant on peut aller au dashboard avec le nouveau token
       navigate('/admin/dashboard');
       
     } catch (err) {
@@ -85,7 +91,7 @@ const Login: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+};
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
